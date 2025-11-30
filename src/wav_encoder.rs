@@ -7,13 +7,14 @@ use hound::{WavWriter, WavSpec, SampleFormat};
 use std::io::Cursor;
 
 /// 编码 WAV 音频到内存
+/// 使用 16-bit PCM 格式 (浏览器兼容)
 pub fn encode_wav(audio: &[f32], sample_rate: u32) -> Result<Vec<u8>> {
-    // WAV 规格
+    // WAV 规格 - 使用 16-bit PCM (浏览器标准格式)
     let spec = WavSpec {
         channels: 1,                    // 单声道
         sample_rate,                    // 24000 Hz
-        bits_per_sample: 32,            // 32-bit float
-        sample_format: SampleFormat::Float,
+        bits_per_sample: 16,            // 16-bit PCM
+        sample_format: SampleFormat::Int,
     };
 
     // 写入内存缓冲区
@@ -21,9 +22,13 @@ pub fn encode_wav(audio: &[f32], sample_rate: u32) -> Result<Vec<u8>> {
     {
         let mut writer = WavWriter::new(&mut cursor, spec)?;
 
-        // 写入所有样本
+        // 写入所有样本 (f32 → i16 转换)
         for &sample in audio {
-            writer.write_sample(sample)?;
+            // 限制范围到 [-1.0, 1.0]
+            let clamped = sample.max(-1.0).min(1.0);
+            // 转换为 16-bit PCM: [-1.0, 1.0] → [-32768, 32767]
+            let pcm_sample = (clamped * 32767.0) as i16;
+            writer.write_sample(pcm_sample)?;
         }
 
         writer.finalize()?;

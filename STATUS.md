@@ -11,14 +11,13 @@
 - [x] 测试音调生成 (440Hz)
 - [x] 自动发现机制
 - [x] ort 2.0-rc 依赖添加
+- [x] **文件缓存系统** (SHA256 哈希, 1 小时 TTL)
+- [x] **静态文件服务** (`GET /audio/:filename`)
+- [x] **URL 模式响应** (返回音频 URL 而非二进制)
 
 ## ⏳ 进行中
 
-### 文件缓存系统 (高优先级)
-
-**原因**: 你的建议 - 避免重复生成，节省 90% 带宽
-
-**实现计划**: 见 TODO.md #2
+无
 
 ## ❌ 阻塞
 
@@ -47,9 +46,45 @@
 
 ## 🎯 下一步
 
-1. **立即可做**: 实现文件缓存 + HTTP 文件服务
-2. **等待依赖**: ONNX 推理 (ort 2.0 正式版)
-3. **长期**: 音素化、说话人选择
+1. **ONNX 推理集成** - 等待 ort 2.0 正式版或更好的示例
+2. **音素化** - 文本预处理提升质量
+3. **说话人选择** - 多语音支持
+
+## 📊 API 使用示例
+
+### 合成音频
+```bash
+curl -X POST http://localhost:9527/synthesize \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Hello, world"}'
+
+# 响应:
+{
+  "file_id": "6e3b6f3978e5cd96",
+  "url": "http://localhost:9527/audio/6e3b6f3978e5cd96.wav",
+  "cached": false  # 首次生成
+}
+```
+
+### 获取音频文件
+```bash
+curl http://localhost:9527/audio/6e3b6f3978e5cd96.wav --output audio.wav
+```
+
+### 缓存命中
+```bash
+# 重复相同文本
+curl -X POST http://localhost:9527/synthesize \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Hello, world"}'
+
+# 响应:
+{
+  "file_id": "6e3b6f3978e5cd96",
+  "url": "http://localhost:9527/audio/6e3b6f3978e5cd96.wav",
+  "cached": true  # 缓存命中，立即返回
+}
+```
 
 ---
 **维护者**: Jason

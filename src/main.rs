@@ -1,4 +1,5 @@
 use axum::{
+    extract::Path,
     routing::{get, post},
     Router,
     Json,
@@ -11,14 +12,20 @@ use std::sync::OnceLock;
 use tower_http::cors::{CorsLayer, Any};
 use tracing::{info, error, Level};
 
+mod cache;
 mod tts_engine;
+mod vocab;
 mod wav_encoder;
 
+use cache::AudioCache;
 use tts_engine::TTSEngine;
 use wav_encoder::encode_wav;
 
 // 全局 TTS 引擎 (单例模式)
-static TTS_ENGINE: OnceLock<TTSEngine> = OnceLock::new();
+static TTS_ENGINE: OnceLock<std::sync::Mutex<TTSEngine>> = OnceLock::new();
+
+// 全局音频缓存 (单例模式)
+static AUDIO_CACHE: OnceLock<AudioCache> = OnceLock::new();
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ApiResponse<T> {
@@ -71,30 +78,63 @@ fn default_format() -> String {
     "wav".to_string()
 }
 
-/// POST /synthesize - TTS synthesis
+#[derive(Debug, Serialize)]
+struct SynthesizeResponse {
+    file_id: String,
+    url: String,
+    cached: bool,
+}
+
+/// POST /synthesize - TTS synthesis (使用文件缓存)
 async fn synthesize(
     Json(payload): Json<SynthesizeRequest>
 ) -> impl IntoResponse {
-    info!("🎵 TTS 合成请求: \"{}\"", payload.text);
+    info!("🎵 TTS 合成请求: \"{}\"", &payload.text[..payload.text.len().min(50)]);
+
+    // 获取或初始化缓存
+    let cache = AUDIO_CACHE.get_or_init(|| {
+        info!("🔧 初始化音频缓存...");
+        AudioCache::new("cache/audio", 3600).expect("无法初始化缓存")
+    });
+
+    // 检查缓存
+    if let Some(file_id) = cache.exists(&payload.text) {
+        info!("✅ 缓存命中: {}", file_id);
+
+        let response = SynthesizeResponse {
+            file_id: file_id.clone(),
+            url: format!("http://localhost:9527/audio/{}.wav", file_id),
+            cached: true,
+        };
+
+        return (
+            StatusCode::OK,
+            [(header::CONTENT_TYPE, "application/json")],
+            serde_json::to_string(&response).unwrap()
+        );
+    }
+
+    info!("❌ 缓存未命中，开始合成...");
 
     // 获取或初始化 TTS 引擎
-    let engine = TTS_ENGINE.get_or_init(|| {
+    let engine_mutex = TTS_ENGINE.get_or_init(|| {
         info!("🔧 首次初始化 TTS 引擎...");
 
         match TTSEngine::new("checkpoints/kokoro-v1.0.onnx") {
             Ok(engine) => {
                 info!("✅ TTS 引擎初始化成功");
-                engine
+                std::sync::Mutex::new(engine)
             },
             Err(e) => {
                 error!("❌ TTS 引擎初始化失败: {}", e);
-                // 返回 mock 引擎作为降级
                 panic!("无法加载 TTS 模型: {}", e);
             }
         }
     });
 
-    // 合成音频 (当前使用 Mock 实现)
+    let mut engine = engine_mutex.lock().unwrap();
+
+    // 合成音频
     match engine.synthesize(&payload.text) {
         Ok(audio_samples) => {
             info!("✅ 音频合成成功 ({} 样本)", audio_samples.len());
@@ -104,19 +144,37 @@ async fn synthesize(
                 Ok(wav_bytes) => {
                     info!("✅ WAV 编码完成 ({} 字节)", wav_bytes.len());
 
-                    // 返回 WAV 音频
-                    (
-                        StatusCode::OK,
-                        [(header::CONTENT_TYPE, "audio/wav")],
-                        wav_bytes
-                    )
+                    // 保存到缓存
+                    match cache.save(&payload.text, &wav_bytes) {
+                        Ok(file_id) => {
+                            let response = SynthesizeResponse {
+                                file_id: file_id.clone(),
+                                url: format!("http://localhost:9527/audio/{}.wav", file_id),
+                                cached: false,
+                            };
+
+                            (
+                                StatusCode::OK,
+                                [(header::CONTENT_TYPE, "application/json")],
+                                serde_json::to_string(&response).unwrap()
+                            )
+                        },
+                        Err(e) => {
+                            error!("❌ 缓存保存失败: {}", e);
+                            (
+                                StatusCode::INTERNAL_SERVER_ERROR,
+                                [(header::CONTENT_TYPE, "application/json")],
+                                format!(r#"{{"error": "缓存保存失败: {}"}}"#, e)
+                            )
+                        }
+                    }
                 },
                 Err(e) => {
                     error!("❌ WAV 编码失败: {}", e);
                     (
                         StatusCode::INTERNAL_SERVER_ERROR,
-                        [(header::CONTENT_TYPE, "audio/wav")],
-                        Vec::new()
+                        [(header::CONTENT_TYPE, "application/json")],
+                        format!(r#"{{"error": "WAV 编码失败: {}"}}"#, e)
                     )
                 }
             }
@@ -125,7 +183,61 @@ async fn synthesize(
             error!("❌ 音频合成失败: {}", e);
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                [(header::CONTENT_TYPE, "audio/wav")],
+                [(header::CONTENT_TYPE, "application/json")],
+                format!(r#"{{"error": "音频合成失败: {}"}}"#, e)
+            )
+        }
+    }
+}
+
+/// GET /audio/:filename - 静态音频文件服务
+async fn serve_audio(Path(filename): Path<String>) -> impl IntoResponse {
+    use tokio::fs::File;
+    use tokio::io::AsyncReadExt;
+
+    info!("📁 请求音频文件: {}", filename);
+
+    // 安全检查: 只允许 .wav 文件
+    if !filename.ends_with(".wav") {
+        error!("❌ 非法文件扩展名: {}", filename);
+        return (
+            StatusCode::BAD_REQUEST,
+            [(header::CONTENT_TYPE, "text/plain")],
+            Vec::new()
+        );
+    }
+
+    // 构建文件路径
+    let file_path = format!("cache/audio/{}", filename);
+
+    // 读取文件
+    match File::open(&file_path).await {
+        Ok(mut file) => {
+            let mut contents = Vec::new();
+            match file.read_to_end(&mut contents).await {
+                Ok(_) => {
+                    info!("✅ 读取音频文件: {} ({} 字节)", filename, contents.len());
+                    (
+                        StatusCode::OK,
+                        [(header::CONTENT_TYPE, "audio/wav")],
+                        contents
+                    )
+                },
+                Err(e) => {
+                    error!("❌ 读取文件失败: {}", e);
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        [(header::CONTENT_TYPE, "text/plain")],
+                        Vec::new()
+                    )
+                }
+            }
+        },
+        Err(_) => {
+            error!("❌ 文件不存在: {}", filename);
+            (
+                StatusCode::NOT_FOUND,
+                [(header::CONTENT_TYPE, "text/plain")],
                 Vec::new()
             )
         }
@@ -146,6 +258,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/", get(get_server_info))
         .route("/health", get(health_check))
         .route("/synthesize", post(synthesize))
+        .route("/audio/:filename", get(serve_audio))
         .layer(
             CorsLayer::new()
                 .allow_origin(Any)

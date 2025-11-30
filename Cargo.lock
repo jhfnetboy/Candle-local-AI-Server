@@ -1243,6 +1243,7 @@ dependencies = [
  "anyhow",
  "axum",
  "hound",
+ "lazy_static",
  "ndarray 0.15.6",
  "ort",
  "serde",

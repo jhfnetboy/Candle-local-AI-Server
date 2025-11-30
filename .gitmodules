@@ -1,0 +1,6 @@
+[submodule "references/Kokoros"]
+	path = references/Kokoros
+	url = https://github.com/lucasjinreal/Kokoros.git
+[submodule "references/kokoro-onnx"]
+	path = references/kokoro-onnx
+	url = https://github.com/yakhyo/kokoro-onnx.git

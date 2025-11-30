@@ -38,6 +38,9 @@ hound = "3.5"  # WAV file encoding
 sha2 = "0.10"  # 文本哈希用于缓存键
 # tokio fs 已包含在上面的 tokio full features 中
 
+# Lazy static for global state
+lazy_static = "1.4"
+
 # Phonemizer (for text preprocessing)
 # Note: 可能需要额外的依赖来处理音素转换
 
