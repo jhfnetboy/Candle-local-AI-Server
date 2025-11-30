@@ -1,0 +1,42 @@
+[package]
+name = "tts-server"
+version = "0.1.0"
+edition = "2021"
+authors = ["Jason <jason@example.com>"]
+description = "Rust TTS Server with Candle ML Framework"
+license = "MIT"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# HTTP server
+axum = "0.7"
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors"] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Error handling
+anyhow = "1"
+thiserror = "1"
+
+# ONNX Runtime for Kokoro-82M
+ort = "2.0.0-rc.10"  # ONNX Runtime (latest RC)
+
+# Audio processing
+hound = "3.5"  # WAV file encoding
+
+# Phonemizer (for text preprocessing)
+# Note: 可能需要额外的依赖来处理音素转换
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
