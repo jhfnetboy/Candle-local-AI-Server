@@ -13,6 +13,12 @@ target
 # Contains mutation testing data
 **/mutants.out*/
 
+# Model files (too large for git)
+checkpoints/*.onnx
+checkpoints/*.pt
+data/*.bin
+data/*.wav
+
 # RustRover
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore

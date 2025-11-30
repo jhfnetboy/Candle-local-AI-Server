@@ -2,13 +2,23 @@ use axum::{
     routing::{get, post},
     Router,
     Json,
-    http::StatusCode,
+    http::{StatusCode, header},
     response::IntoResponse,
 };
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
+use std::sync::OnceLock;
 use tower_http::cors::{CorsLayer, Any};
-use tracing::{info, Level};
+use tracing::{info, error, Level};
+
+mod tts_engine;
+mod wav_encoder;
+
+use tts_engine::TTSEngine;
+use wav_encoder::encode_wav;
+
+// 全局 TTS 引擎 (单例模式)
+static TTS_ENGINE: OnceLock<TTSEngine> = OnceLock::new();
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ApiResponse<T> {
@@ -67,20 +77,59 @@ async fn synthesize(
 ) -> impl IntoResponse {
     info!("🎵 TTS 合成请求: \"{}\"", payload.text);
 
-    // TODO: 实际的 Candle TTS 推理
-    // 当前返回模拟响应
+    // 获取或初始化 TTS 引擎
+    let engine = TTS_ENGINE.get_or_init(|| {
+        info!("🔧 首次初始化 TTS 引擎...");
 
-    let response = ApiResponse {
-        success: true,
-        data: Some(format!(
-            "Candle TTS 服务已接收: {} (format: {})\n实际音频生成待实现",
-            payload.text,
-            payload.format
-        )),
-        error: None,
-    };
+        match TTSEngine::new("checkpoints/kokoro-v1.0.onnx") {
+            Ok(engine) => {
+                info!("✅ TTS 引擎初始化成功");
+                engine
+            },
+            Err(e) => {
+                error!("❌ TTS 引擎初始化失败: {}", e);
+                // 返回 mock 引擎作为降级
+                panic!("无法加载 TTS 模型: {}", e);
+            }
+        }
+    });
 
-    (StatusCode::OK, Json(response))
+    // 合成音频 (当前使用 Mock 实现)
+    match engine.synthesize(&payload.text) {
+        Ok(audio_samples) => {
+            info!("✅ 音频合成成功 ({} 样本)", audio_samples.len());
+
+            // 编码为 WAV
+            match encode_wav(&audio_samples, engine.sample_rate()) {
+                Ok(wav_bytes) => {
+                    info!("✅ WAV 编码完成 ({} 字节)", wav_bytes.len());
+
+                    // 返回 WAV 音频
+                    (
+                        StatusCode::OK,
+                        [(header::CONTENT_TYPE, "audio/wav")],
+                        wav_bytes
+                    )
+                },
+                Err(e) => {
+                    error!("❌ WAV 编码失败: {}", e);
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        [(header::CONTENT_TYPE, "audio/wav")],
+                        Vec::new()
+                    )
+                }
+            }
+        },
+        Err(e) => {
+            error!("❌ 音频合成失败: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                [(header::CONTENT_TYPE, "audio/wav")],
+                Vec::new()
+            )
+        }
+    }
 }
 
 #[tokio::main]
