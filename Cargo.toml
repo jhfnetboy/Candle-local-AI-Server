@@ -28,9 +28,8 @@ anyhow = "1"
 thiserror = "1"
 
 # ONNX Runtime for Kokoro-82M
-# 注意: 1.x 版本全部被 yanked，只能用 2.0-rc
-# ort = "2.0.0-rc.10"  # 暂时禁用，等 2.0 稳定后启用
-# ndarray = "0.15"
+ort = "2.0.0-rc.10"  # 官方推荐，API 已稳定
+ndarray = "0.15"  # 张量操作
 
 # Audio processing
 hound = "3.5"  # WAV file encoding

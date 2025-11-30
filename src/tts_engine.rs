@@ -1,7 +1,7 @@
-/// TTS Engine - Kokoro-82M (Simplified)
+/// TTS Engine - Simplified for File Caching Demo
 ///
-/// 当前实现: Mock TTS (生成静音或测试音调)
-/// TODO: 等 ort 2.0 正式版发布后集成 ONNX Runtime
+/// 当前实现: 生成测试音调
+/// TODO: ONNX 推理待集成 (等待 ort 2.0 稳定或更好的示例)
 
 use anyhow::Result;
 use std::path::Path;
@@ -14,34 +14,37 @@ pub struct TTSEngine {
 impl TTSEngine {
     /// 初始化 TTS 引擎
     pub fn new<P: AsRef<Path>>(_model_path: P) -> Result<Self> {
-        info!("🔧 TTS 引擎初始化 (Mock 模式)");
-        info!("⚠️  等待 ort 2.0 正式版发布后集成 ONNX Runtime");
+        info!("🔧 TTS 引擎初始化");
+        info!("⚠️  当前使用测试音调 (ONNX 集成待完成)");
 
         Ok(Self {
-            sample_rate: 24000,  // Kokoro 使用 24kHz
+            sample_rate: 24000,
         })
     }
 
-    /// 文本转语音
-    ///
-    /// 当前生成测试音调用于验证音频管道
+    /// 文本转语音 - 生成测试音调
     pub fn synthesize(&self, text: &str) -> Result<Vec<f32>> {
         info!("🎵 合成文本: \"{}\"", &text[..text.len().min(50)]);
 
-        // 生成 1 秒测试音调 (440Hz A4 音符)
+        // 生成测试音调
+        let audio = self.generate_test_tone();
+        info!("✅ 生成测试音调 ({} 样本)", audio.len());
+        
+        Ok(audio)
+    }
+
+    /// 生成测试音调 (440Hz)
+    fn generate_test_tone(&self) -> Vec<f32> {
         let duration = 1.0;
         let frequency = 440.0;
         let sample_count = (self.sample_rate as f32 * duration) as usize;
 
-        let mut audio = Vec::with_capacity(sample_count);
-        for i in 0..sample_count {
-            let t = i as f32 / self.sample_rate as f32;
-            let sample = (2.0 * std::f32::consts::PI * frequency * t).sin() * 0.3; // 30% 音量
-            audio.push(sample);
-        }
-
-        info!("✅ 生成测试音调 ({} 样本, {}Hz)", audio.len(), frequency);
-        Ok(audio)
+        (0..sample_count)
+            .map(|i| {
+                let t = i as f32 / self.sample_rate as f32;
+                (2.0 * std::f32::consts::PI * frequency * t).sin() * 0.3
+            })
+            .collect()
     }
 
     /// 获取采样率
