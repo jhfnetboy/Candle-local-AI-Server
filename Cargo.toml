@@ -28,10 +28,16 @@ anyhow = "1"
 thiserror = "1"
 
 # ONNX Runtime for Kokoro-82M
-ort = "2.0.0-rc.10"  # ONNX Runtime (latest RC)
+# 注意: 1.x 版本全部被 yanked，只能用 2.0-rc
+# ort = "2.0.0-rc.10"  # 暂时禁用，等 2.0 稳定后启用
+# ndarray = "0.15"
 
 # Audio processing
 hound = "3.5"  # WAV file encoding
+
+# Caching & File System
+sha2 = "0.10"  # 文本哈希用于缓存键
+# tokio fs 已包含在上面的 tokio full features 中
 
 # Phonemizer (for text preprocessing)
 # Note: 可能需要额外的依赖来处理音素转换
