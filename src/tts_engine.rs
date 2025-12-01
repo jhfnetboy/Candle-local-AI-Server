@@ -13,6 +13,7 @@
 
 use anyhow::{Context, Result};
 use ort::session::{builder::GraphOptimizationLevel, Session};
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
@@ -22,7 +23,8 @@ use tracing::info;
 pub struct TTSEngine {
     session: Session,
     sample_rate: u32,
-    style_vectors: Vec<Vec<f32>>, // [512 tokens, 256 dims]
+    voices: HashMap<String, Vec<Vec<f32>>>, // voice_name -> [510 tokens, 256 dims]
+    default_voice: String,
 }
 
 impl TTSEngine {
@@ -53,23 +55,56 @@ impl TTSEngine {
             info!("  - 名称: {}, 类型: {:?}", output.name, output.output_type);
         }
 
-        // 加载 style vectors (使用简化的二进制格式)
-        info!("📂 加载 style vectors...");
-        let style_vectors = Self::load_style_vectors("data/voices_simple.bin")?;
-        info!("✅ 加载 {} 个 style vectors", style_vectors.len());
+        // 加载所有 voices
+        info!("📂 加载所有声音...");
+        let voices = Self::load_all_voices("data/voices")?;
+        info!("✅ 加载 {} 个声音", voices.len());
+
+        let default_voice = "af_alloy".to_string();
+        info!("🎵 默认声音: {}", default_voice);
 
         Ok(Self {
             session,
             sample_rate: 24000,
-            style_vectors,
+            voices,
+            default_voice,
         })
     }
 
-    /// 加载 style vectors from binary file
-    /// 格式: [510 tokens, 256 dims] f32 数组
-    fn load_style_vectors<P: AsRef<Path>>(path: P) -> Result<Vec<Vec<f32>>> {
+    /// 加载所有声音的 style vectors
+    fn load_all_voices<P: AsRef<Path>>(voices_dir: P) -> Result<HashMap<String, Vec<Vec<f32>>>> {
+        use std::fs;
+
+        let voices_dir = voices_dir.as_ref();
+        let index_path = voices_dir.join("index.json");
+
+        // 读取索引文件
+        let index_content = fs::read_to_string(&index_path)
+            .with_context(|| format!("无法读取 index.json: {:?}", index_path))?;
+
+        let index: serde_json::Value = serde_json::from_str(&index_content)?;
+        let voices_obj = index.as_object()
+            .context("index.json 格式错误")?;
+
+        let mut voices = HashMap::new();
+
+        for (voice_name, voice_info) in voices_obj {
+            let file_name = voice_info["file"].as_str()
+                .context("缺少 file 字段")?;
+
+            let file_path = voices_dir.join(file_name);
+            let vectors = Self::load_voice_file(&file_path)?;
+
+            voices.insert(voice_name.clone(), vectors);
+        }
+
+        Ok(voices)
+    }
+
+    /// 加载单个声音文件
+    fn load_voice_file<P: AsRef<Path>>(path: P) -> Result<Vec<Vec<f32>>> {
         let mut file = File::open(path.as_ref())
-            .with_context(|| format!("无法打开 style vectors 文件: {:?}", path.as_ref()))?;
+            .with_context(|| format!("无法打开声音文件: {:?}", path.as_ref()))?;
 
         let mut buffer = Vec::new();
         file.read_to_end(&mut buffer)?;
@@ -80,7 +115,7 @@ impl TTSEngine {
             .map(|bytes| f32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
             .collect();
 
-        // 重组为 [510, 256] 结构 (Kokoro 实际使用 510 个 token styles)
+        // 重组为 [510, 256] 结构
         const TOKEN_LIMIT: usize = 510;
         const STYLE_DIM: usize = 256;
 
@@ -97,10 +132,11 @@ impl TTSEngine {
     }
 
     /// 文本转语音 - ONNX 推理
-    pub fn synthesize(&mut self, text: &str) -> Result<Vec<f32>> {
-        info!("🎵 合成文本: \"{}\"", &text[..text.len().min(50)]);
+    pub fn synthesize(&mut self, text: &str, voice: Option<&str>) -> Result<Vec<f32>> {
+        let voice_name = voice.unwrap_or(&self.default_voice);
+        info!("🎵 合成文本: \"{}\" (声音: {})", &text[..text.len().min(50)], voice_name);
 
-        // 1. 文本 → 音素 (简化版: 直接使用文本)
+        // 1. 文本 → 音素
         let phonemes = self.simple_phonemize(text);
         info!("📝 音素: {}", &phonemes[..phonemes.len().min(50)]);
 
@@ -112,15 +148,17 @@ impl TTSEngine {
             return Ok(vec![0.0; 24000]); // 1秒静音
         }
 
-        // 3. 获取 style vector (使用第一个 style,不依赖 token 长度)
-        // 参考 Kokoros: 使用固定的 voice style
-        let style_vector = if !self.style_vectors.is_empty() {
-            self.style_vectors[0].clone()  // 使用第一个 style (默认声音)
+        // 3. 获取指定声音的 style vector
+        let style_vectors = self.voices.get(voice_name)
+            .ok_or_else(|| anyhow::anyhow!("声音 '{}' 不存在", voice_name))?;
+
+        let style_vector = if !style_vectors.is_empty() {
+            style_vectors[0].clone()  // 使用第一个 token 的 style
         } else {
             vec![0.0f32; 256]  // 降级: 零向量
         };
 
-        info!("🎨 使用 style vector: index=0, dims={}", style_vector.len());
+        info!("🎨 使用声音 '{}' 的 style vector (dims={})", voice_name, style_vector.len());
 
         // 4. ONNX 推理
         let audio = self.run_inference(&tokens, &style_vector)?;

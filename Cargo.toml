@@ -30,6 +30,7 @@ thiserror = "1"
 # ONNX Runtime for Kokoro-82M
 ort = "2.0.0-rc.10"  # 官方推荐，API 已稳定
 ndarray = "0.15"  # 张量操作
+zip = "0.6"  # NPZ 文件读取
 
 # Audio processing
 hound = "3.5"  # WAV file encoding

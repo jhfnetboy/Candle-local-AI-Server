@@ -42,16 +42,24 @@ impl AudioCache {
         })
     }
 
-    /// 根据文本生成唯一的文件 ID (SHA256 哈希)
+    /// 根据文本和声音生成唯一的文件 ID (SHA256 哈希)
     ///
     /// # Arguments
     /// * `text` - 要合成的文本
+    /// * `voice` - 可选的声音名称
     ///
     /// # Returns
     /// 16 字符的十六进制哈希 (SHA256 前 64 位)
-    pub fn get_file_id(&self, text: &str) -> String {
+    pub fn get_file_id(&self, text: &str, voice: Option<&str>) -> String {
         let mut hasher = Sha256::new();
         hasher.update(text.as_bytes());
+
+        // 如果有声音参数,也包含在哈希中
+        if let Some(v) = voice {
+            hasher.update(b"|voice:");
+            hasher.update(v.as_bytes());
+        }
+
         let result = hasher.finalize();
 
         // 取前 8 字节 (64 位) 转为 16 字符十六进制
@@ -70,11 +78,12 @@ impl AudioCache {
     ///
     /// # Arguments
     /// * `text` - 要检查的文本
+    /// * `voice` - 可选的声音名称
     ///
     /// # Returns
     /// `Some(file_id)` 如果缓存命中, `None` 如果未命中或已过期
-    pub fn exists(&self, text: &str) -> Option<String> {
-        let file_id = self.get_file_id(text);
+    pub fn exists(&self, text: &str, voice: Option<&str>) -> Option<String> {
+        let file_id = self.get_file_id(text, voice);
         let file_path = self.get_file_path(&file_id);
 
         if !file_path.exists() {
@@ -110,12 +119,13 @@ impl AudioCache {
     ///
     /// # Arguments
     /// * `text` - 原始文本
+    /// * `voice` - 可选的声音名称
     /// * `audio_data` - WAV 音频数据 (字节)
     ///
     /// # Returns
     /// 文件 ID
-    pub fn save(&self, text: &str, audio_data: &[u8]) -> Result<String> {
-        let file_id = self.get_file_id(text);
+    pub fn save(&self, text: &str, voice: Option<&str>, audio_data: &[u8]) -> Result<String> {
+        let file_id = self.get_file_id(text, voice);
         let file_path = self.get_file_path(&file_id);
 
         let mut file = File::create(&file_path)

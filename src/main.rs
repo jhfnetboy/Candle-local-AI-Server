@@ -72,6 +72,7 @@ struct SynthesizeRequest {
     text: String,
     #[serde(default = "default_format")]
     format: String,
+    voice: Option<String>,  // 可选的声音参数
 }
 
 fn default_format() -> String {
@@ -97,8 +98,8 @@ async fn synthesize(
         AudioCache::new("cache/audio", 3600).expect("无法初始化缓存")
     });
 
-    // 检查缓存
-    if let Some(file_id) = cache.exists(&payload.text) {
+    // 检查缓存 (包含声音参数)
+    if let Some(file_id) = cache.exists(&payload.text, payload.voice.as_deref()) {
         info!("✅ 缓存命中: {}", file_id);
 
         let response = SynthesizeResponse {
@@ -134,8 +135,8 @@ async fn synthesize(
 
     let mut engine = engine_mutex.lock().unwrap();
 
-    // 合成音频
-    match engine.synthesize(&payload.text) {
+    // 合成音频 (传递 voice 参数)
+    match engine.synthesize(&payload.text, payload.voice.as_deref()) {
         Ok(audio_samples) => {
             info!("✅ 音频合成成功 ({} 样本)", audio_samples.len());
 
@@ -144,8 +145,8 @@ async fn synthesize(
                 Ok(wav_bytes) => {
                     info!("✅ WAV 编码完成 ({} 字节)", wav_bytes.len());
 
-                    // 保存到缓存
-                    match cache.save(&payload.text, &wav_bytes) {
+                    // 保存到缓存 (包含声音参数)
+                    match cache.save(&payload.text, payload.voice.as_deref(), &wav_bytes) {
                         Ok(file_id) => {
                             let response = SynthesizeResponse {
                                 file_id: file_id.clone(),
