@@ -7,9 +7,9 @@ echo "📦 下载 Kokoro-82M TTS 模型..."
 # 创建目录
 mkdir -p checkpoints data
 
-# 下载 ONNX 模型 (~1.3 GB)
+# 下载 ONNX 模型 (~310 MB)
 if [ ! -f "checkpoints/kokoro-v1.0.onnx" ]; then
-    echo "⬇️  下载 ONNX 模型 (1.3 GB)..."
+    echo "⬇️  下载 ONNX 模型 (约 310 MB)..."
     curl -L "https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX-timestamped/resolve/main/onnx/model.onnx" \
         -o checkpoints/kokoro-v1.0.onnx \
         --progress-bar

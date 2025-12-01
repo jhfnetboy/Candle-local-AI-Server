@@ -255,7 +255,7 @@ async fn ensure_models_downloaded() -> anyhow::Result<()> {
 
     if !model_path.exists() {
         info!("📥 模型文件不存在，开始自动下载...");
-        info!("⏳ 这可能需要几分钟时间 (模型约 1.3GB)...");
+        info!("⏳ 这可能需要几分钟时间 (模型约 310MB)...");
 
         // 运行下载脚本
         let output = Command::new("bash")
