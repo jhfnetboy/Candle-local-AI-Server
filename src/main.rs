@@ -246,6 +246,37 @@ async fn serve_audio(Path(filename): Path<String>) -> impl IntoResponse {
     }
 }
 
+/// 检查并下载模型文件
+async fn ensure_models_downloaded() -> anyhow::Result<()> {
+    use tokio::process::Command;
+    use std::path::Path;
+
+    let model_path = Path::new("checkpoints/kokoro-v1.0.onnx");
+
+    if !model_path.exists() {
+        info!("📥 模型文件不存在，开始自动下载...");
+        info!("⏳ 这可能需要几分钟时间 (模型约 1.3GB)...");
+
+        // 运行下载脚本
+        let output = Command::new("bash")
+            .arg("download_models.sh")
+            .output()
+            .await?;
+
+        if output.status.success() {
+            info!("✅ 模型下载完成");
+        } else {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            error!("❌ 模型下载失败: {}", stderr);
+            return Err(anyhow::anyhow!("模型下载失败"));
+        }
+    } else {
+        info!("✅ 模型文件已存在，跳过下载");
+    }
+
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     // 初始化日志
@@ -254,6 +285,9 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     info!("🚀 启动 TTS 服务器 (Candle Framework)...");
+
+    // 确保模型已下载
+    ensure_models_downloaded().await?;
 
     // 创建路由
     let app = Router::new()
