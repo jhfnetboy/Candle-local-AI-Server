@@ -203,9 +203,9 @@ mod tests {
     fn test_file_id_generation() {
         let cache = AudioCache::new("/tmp/test_cache", 3600).unwrap();
 
-        let id1 = cache.get_file_id("Hello, world!");
-        let id2 = cache.get_file_id("Hello, world!");
-        let id3 = cache.get_file_id("Different text");
+        let id1 = cache.get_file_id("Hello, world!", None);
+        let id2 = cache.get_file_id("Hello, world!", None);
+        let id3 = cache.get_file_id("Different text", None);
 
         // 相同文本生成相同 ID
         assert_eq!(id1, id2);
@@ -215,6 +215,20 @@ mod tests {
 
         // ID 长度为 16 字符 (64 位十六进制)
         assert_eq!(id1.len(), 16);
+
+        // 测试带 voice 参数的情况
+        let id_with_voice1 = cache.get_file_id("Hello, world!", Some("bm_george"));
+        let id_with_voice2 = cache.get_file_id("Hello, world!", Some("bm_george"));
+        let id_with_different_voice = cache.get_file_id("Hello, world!", Some("af_alloy"));
+
+        // 相同文本+相同语音 = 相同 ID
+        assert_eq!(id_with_voice1, id_with_voice2);
+
+        // 相同文本+不同语音 = 不同 ID
+        assert_ne!(id_with_voice1, id_with_different_voice);
+
+        // 相同文本,有无语音参数 = 不同 ID
+        assert_ne!(id1, id_with_voice1);
     }
 
     #[test]
@@ -225,10 +239,10 @@ mod tests {
         let audio_data = vec![0u8; 1024]; // 模拟音频数据
 
         // 保存到缓存
-        let file_id = cache.save(text, &audio_data).unwrap();
+        let file_id = cache.save(text, None, &audio_data).unwrap();
 
         // 检查缓存存在
-        assert_eq!(cache.exists(text), Some(file_id));
+        assert_eq!(cache.exists(text, None), Some(file_id));
     }
 
     #[test]
@@ -238,15 +252,15 @@ mod tests {
         let text = "Expiring content";
         let audio_data = vec![0u8; 512];
 
-        cache.save(text, &audio_data).unwrap();
+        cache.save(text, None, &audio_data).unwrap();
 
         // 立即检查 - 应该存在
-        assert!(cache.exists(text).is_some());
+        assert!(cache.exists(text, None).is_some());
 
         // 等待 2 秒
         thread::sleep(Duration::from_secs(2));
 
         // 检查 - 应该已过期
-        assert!(cache.exists(text).is_none());
+        assert!(cache.exists(text, None).is_none());
     }
 }
