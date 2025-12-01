@@ -1,0 +1,380 @@
+{
+  "af_alloy": {
+    "file": "af_alloy.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "af_aoede": {
+    "file": "af_aoede.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "af_bella": {
+    "file": "af_bella.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "af_heart": {
+    "file": "af_heart.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "af_jessica": {
+    "file": "af_jessica.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "af_kore": {
+    "file": "af_kore.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "af_nicole": {
+    "file": "af_nicole.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "af_nova": {
+    "file": "af_nova.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "af_river": {
+    "file": "af_river.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "af_sarah": {
+    "file": "af_sarah.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "af_sky": {
+    "file": "af_sky.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "am_adam": {
+    "file": "am_adam.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "am_echo": {
+    "file": "am_echo.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "am_eric": {
+    "file": "am_eric.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "am_fenrir": {
+    "file": "am_fenrir.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "am_liam": {
+    "file": "am_liam.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "am_michael": {
+    "file": "am_michael.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "am_onyx": {
+    "file": "am_onyx.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "am_puck": {
+    "file": "am_puck.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "am_santa": {
+    "file": "am_santa.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "bf_alice": {
+    "file": "bf_alice.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "bf_emma": {
+    "file": "bf_emma.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "bf_isabella": {
+    "file": "bf_isabella.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "bf_lily": {
+    "file": "bf_lily.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "bm_daniel": {
+    "file": "bm_daniel.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "bm_fable": {
+    "file": "bm_fable.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "bm_george": {
+    "file": "bm_george.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "bm_lewis": {
+    "file": "bm_lewis.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "ef_dora": {
+    "file": "ef_dora.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "em_alex": {
+    "file": "em_alex.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "em_santa": {
+    "file": "em_santa.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "ff_siwis": {
+    "file": "ff_siwis.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "hf_alpha": {
+    "file": "hf_alpha.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "hf_beta": {
+    "file": "hf_beta.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "hm_omega": {
+    "file": "hm_omega.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "hm_psi": {
+    "file": "hm_psi.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "if_sara": {
+    "file": "if_sara.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "im_nicola": {
+    "file": "im_nicola.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "jf_alpha": {
+    "file": "jf_alpha.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "jf_gongitsune": {
+    "file": "jf_gongitsune.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "jf_nezumi": {
+    "file": "jf_nezumi.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "jf_tebukuro": {
+    "file": "jf_tebukuro.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "jm_kumo": {
+    "file": "jm_kumo.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "pf_dora": {
+    "file": "pf_dora.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "pm_alex": {
+    "file": "pm_alex.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "pm_santa": {
+    "file": "pm_santa.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "zf_xiaobei": {
+    "file": "zf_xiaobei.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "zf_xiaoni": {
+    "file": "zf_xiaoni.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "zf_xiaoxiao": {
+    "file": "zf_xiaoxiao.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "zf_xiaoyi": {
+    "file": "zf_xiaoyi.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "zm_yunjian": {
+    "file": "zm_yunjian.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "zm_yunxi": {
+    "file": "zm_yunxi.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "zm_yunxia": {
+    "file": "zm_yunxia.bin",
+    "shape": [
+      510,
+      256
+    ]
+  },
+  "zm_yunyang": {
+    "file": "zm_yunyang.bin",
+    "shape": [
+      510,
+      256
+    ]
+  }
+}
