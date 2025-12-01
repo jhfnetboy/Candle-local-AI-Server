@@ -1,9 +1,9 @@
 #!/bin/bash
-# TTS Server v0.1.0 Release Preparation Script
+# TTS Server v0.1.1 Release Preparation Script
 
 set -e
 
-VERSION="0.1.0"
+VERSION="0.1.1"
 BINARY_NAME="tts-server"
 RELEASE_DIR="release-v${VERSION}"
 
