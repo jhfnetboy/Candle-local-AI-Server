@@ -11,7 +11,7 @@ use sha2::{Digest, Sha256};
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::SystemTime;
 use tracing::{debug, info, warn};
 
 /// 音频缓存管理器
@@ -142,6 +142,7 @@ impl AudioCache {
     ///
     /// # Returns
     /// 删除的文件数量
+    #[allow(dead_code)]
     pub fn cleanup(&self) -> Result<usize> {
         let mut deleted = 0;
         let now = SystemTime::now();
@@ -186,6 +187,7 @@ impl AudioCache {
     }
 
     /// 获取缓存目录路径
+    #[allow(dead_code)]
     pub fn cache_dir(&self) -> &Path {
         &self.cache_dir
     }

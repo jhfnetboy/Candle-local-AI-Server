@@ -71,7 +71,8 @@ async fn health_check() -> Json<ApiResponse<String>> {
 struct SynthesizeRequest {
     text: String,
     #[serde(default = "default_format")]
-    format: String,
+    #[allow(dead_code)]
+    format: String,  // 保留用于未来扩展 (mp3, ogg等)
     voice: Option<String>,  // 可选的声音参数
 }
 

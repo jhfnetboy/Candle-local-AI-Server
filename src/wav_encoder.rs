@@ -37,7 +37,8 @@ pub fn encode_wav(audio: &[f32], sample_rate: u32) -> Result<Vec<u8>> {
     Ok(cursor.into_inner())
 }
 
-/// 编码 WAV 音频到文件
+/// 编码 WAV 音频到文件 (保留用于未来直接文件输出)
+#[allow(dead_code)]
 pub fn encode_wav_file(audio: &[f32], sample_rate: u32, path: &str) -> Result<()> {
     let spec = WavSpec {
         channels: 1,
