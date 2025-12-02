@@ -26,48 +26,51 @@ A lightweight, blazing-fast text-to-speech server designed for the MyDictionary 
 
 #### **macOS (Apple Silicon & Intel)**
 
+**⚠️ 重要: 必须在命令行中运行，不要双击 tts-server 文件！**
+
 ```bash
 # 1. Download the latest release
 curl -L -o tts-server-macos.tar.gz \
-  https://github.com/jhfnetboy/Candle-local-AI-Server/releases/download/v0.1.0/tts-server-macos.tar.gz
+  https://github.com/jhfnetboy/Candle-local-AI-Server/releases/download/v0.1.0/tts-server-macos-v0.1.0.tar.gz
 
 # 2. Extract
-tar -xzf tts-server-macos.tar.gz
+tar -xzf tts-server-macos-v0.1.0.tar.gz
 cd tts-server
 
 # 3. Install espeak-ng (required for phonemization)
 brew install espeak-ng
 
-# 4. Make executable
+# 4. Remove macOS quarantine attribute and make executable
+xattr -d com.apple.quarantine tts-server
 chmod +x tts-server
 
-# 5. Start the server
+# 5. Start the server (在终端中运行)
 ./tts-server
 ```
 
+**常见问题解决**:
+- 如果遇到 "cannot be opened because it is from an unidentified developer"
+  - 运行: `xattr -d com.apple.quarantine tts-server`
+- 如果遇到 "espeak-ng: command not found"
+  - 安装: `brew install espeak-ng`
+
 The server will:
 - Start on `http://localhost:9527`
-- Download models automatically (~24MB, one-time download)
+- Download models automatically (~49MB, one-time download)
 - Create cache directory for audio files
 
 #### **Windows (x64)**
 
-```powershell
-# 1. Download the latest release
-# Visit: https://github.com/jhfnetboy/Candle-local-AI-Server/releases/download/v0.1.0/tts-server-windows.zip
+**⚠️ Windows 版本将在 v0.2.0 发布 (预计 12月中旬)**
 
-# 2. Extract the ZIP file to a folder (e.g., C:\tts-server)
+v0.1.0 目前仅支持 macOS。Windows 用户可以选择:
 
-# 3. Install espeak-ng
-# Download from: https://github.com/espeak-ng/espeak-ng/releases
-# Or use chocolatey:
-choco install espeak-ng
+**选项 1: 等待 v0.2.0 (推荐)**
+- 将包含 Windows 安装程序 (.exe)
+- 自动安装所有依赖
+- 一键启动
 
-# 4. Run the server
-.\tts-server.exe
-```
-
-**Important**: On first run, Windows Defender may ask for permission. Click "Allow access" to enable the server.
+**选项 2: 从源码构建 (见下方 "Option 2: Build from Source")**
 
 ---
 
