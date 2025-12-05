@@ -136,16 +136,24 @@ impl TTSEngine {
         let voice_name = voice.unwrap_or(&self.default_voice);
         info!("🎵 合成文本: \"{}\" (声音: {})", &text[..text.len().min(50)], voice_name);
 
-        // 1. 文本 → 音素
+        // 1. 检查文本长度，如果太长则分段处理
+        const MAX_TOKENS: usize = 400; // 安全限制
+
+        // 先进行音素化以获取实际 token 数
         let phonemes = self.simple_phonemize(text);
         info!("📝 音素: {}", &phonemes[..phonemes.len().min(50)]);
 
-        // 2. 音素 → tokens
         let tokens = crate::vocab::tokenize(&phonemes);
         info!("🔢 Tokens: {} 个", tokens.len());
 
         if tokens.is_empty() {
             return Ok(vec![0.0; 24000]); // 1秒静音
+        }
+
+        // 如果 tokens 数超过限制，按句子分割文本重新合成
+        if tokens.len() > MAX_TOKENS {
+            info!("⚠️ 文本过长 ({} tokens > {} 限制)，自动分段处理", tokens.len(), MAX_TOKENS);
+            return self.synthesize_long_text(text, voice);
         }
 
         // 3. 获取指定声音的 style vector
@@ -165,6 +173,52 @@ impl TTSEngine {
 
         info!("✅ ONNX 推理完成 ({} 样本)", audio.len());
         Ok(audio)
+    }
+
+    /// 分段合成长文本
+    fn synthesize_long_text(&mut self, text: &str, voice: Option<&str>) -> Result<Vec<f32>> {
+        // 按句子分割（支持 .!? 和中文标点）
+        let sentences: Vec<&str> = text
+            .split(|c: char| c == '.' || c == '!' || c == '?' || c == '。' || c == '!' || c == '?')
+            .filter(|s| !s.trim().is_empty())
+            .collect();
+
+        info!("✂️ 文本分割成 {} 个句子", sentences.len());
+
+        let mut combined_audio = Vec::new();
+        const SILENCE_SAMPLES: usize = 7200; // 300ms 静音 (24kHz * 0.3s)
+        let silence = vec![0.0f32; SILENCE_SAMPLES];
+
+        for (i, sentence) in sentences.iter().enumerate() {
+            let sentence_text = sentence.trim();
+            if sentence_text.is_empty() {
+                continue;
+            }
+
+            info!("🎵 合成第 {}/{} 段: \"{}\"", i + 1, sentences.len(), &sentence_text[..sentence_text.len().min(50)]);
+
+            // 递归调用 synthesize (会再次检查长度，如果单句仍太长会继续分割)
+            match self.synthesize(sentence_text, voice) {
+                Ok(audio) => {
+                    combined_audio.extend_from_slice(&audio);
+                    // 句子之间添加短暂静音
+                    if i < sentences.len() - 1 {
+                        combined_audio.extend_from_slice(&silence);
+                    }
+                }
+                Err(e) => {
+                    info!("⚠️ 第 {} 段合成失败: {}, 跳过", i + 1, e);
+                    continue;
+                }
+            }
+        }
+
+        if combined_audio.is_empty() {
+            return Ok(vec![0.0; 24000]); // 返回1秒静音
+        }
+
+        info!("✅ 长文本合成完成 (总样本数: {})", combined_audio.len());
+        Ok(combined_audio)
     }
 
     /// espeak-ng 音素化
