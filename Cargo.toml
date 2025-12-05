@@ -1,6 +1,6 @@
 [package]
 name = "tts-server"
-version = "0.1.0"
+version = "0.1.2"
 edition = "2021"
 authors = ["Jason <jason@example.com>"]
 description = "Rust TTS Server with Candle ML Framework"
