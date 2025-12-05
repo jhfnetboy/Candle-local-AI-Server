@@ -91,7 +91,8 @@ struct SynthesizeResponse {
 async fn synthesize(
     Json(payload): Json<SynthesizeRequest>
 ) -> impl IntoResponse {
-    info!("🎵 TTS 合成请求: \"{}\"", &payload.text[..payload.text.len().min(50)]);
+    let text_preview: String = payload.text.chars().take(50).collect();
+    info!("🎵 TTS 合成请求: \"{}\"", text_preview);
 
     // 获取或初始化缓存
     let cache = AUDIO_CACHE.get_or_init(|| {

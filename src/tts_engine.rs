@@ -134,14 +134,18 @@ impl TTSEngine {
     /// 文本转语音 - ONNX 推理
     pub fn synthesize(&mut self, text: &str, voice: Option<&str>) -> Result<Vec<f32>> {
         let voice_name = voice.unwrap_or(&self.default_voice);
-        info!("🎵 合成文本: \"{}\" (声音: {})", &text[..text.len().min(50)], voice_name);
+        // 安全截断：使用字符迭代器
+        let text_preview: String = text.chars().take(50).collect();
+        info!("🎵 合成文本: \"{}\" (声音: {})", text_preview, voice_name);
 
         // 1. 检查文本长度，如果太长则分段处理
         const MAX_TOKENS: usize = 400; // 安全限制
 
         // 先进行音素化以获取实际 token 数
         let phonemes = self.simple_phonemize(text);
-        info!("📝 音素: {}", &phonemes[..phonemes.len().min(50)]);
+        // 安全截断：使用字符迭代器
+        let phonemes_preview: String = phonemes.chars().take(50).collect();
+        info!("📝 音素: {}", phonemes_preview);
 
         let tokens = crate::vocab::tokenize(&phonemes);
         info!("🔢 Tokens: {} 个", tokens.len());
@@ -195,7 +199,8 @@ impl TTSEngine {
                 continue;
             }
 
-            info!("🎵 合成第 {}/{} 段: \"{}\"", i + 1, sentences.len(), &sentence_text[..sentence_text.len().min(50)]);
+            let sentence_preview: String = sentence_text.chars().take(50).collect();
+            info!("🎵 合成第 {}/{} 段: \"{}\"", i + 1, sentences.len(), sentence_preview);
 
             // 递归调用 synthesize (会再次检查长度，如果单句仍太长会继续分割)
             match self.synthesize(sentence_text, voice) {
